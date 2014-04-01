@@ -11,14 +11,11 @@ var jss = (function (undefined) {
     var jss,
         Jss,
         // Shortcuts
-        doc = document,
-        head = doc.head || doc.getElementsByTagName('head')[0],
-        sheets = doc.styleSheets,
         adjSelAttrRgx = /((?:\.|#)[^\.\s#]+)((?:\.|#)[^\.\s#]+)/g;
     
-    jss = function (selector, sheet) {
+    jss = function (selector, sheet, referenceDocument) {
         var obj = new Jss();
-        obj.init(selector, sheet);
+        obj.init(selector, sheet, referenceDocument);
         return obj;
     };
     
@@ -28,7 +25,7 @@ var jss = (function (undefined) {
         return sheet.ownerNode || sheet.owningElement;
     };
     
-    jss._nodeToSheet = function (node) {
+    jss._nodeToSheet = function (node, sheets) {
         var result = null,
             i;
         
@@ -42,7 +39,7 @@ var jss = (function (undefined) {
         return result;
     };
     
-    jss._getSheets = function (sheetSelector) {
+    jss._getSheets = function (sheetSelector, sheets) {
         var results = [],
             node,
             i;
@@ -66,7 +63,7 @@ var jss = (function (undefined) {
         return results;
     };
     
-    jss._addSheet = function () {
+    jss._addSheet = function (doc, head, sheets) {
         var styleNode = doc.createElement('style'),
             i;
         
@@ -74,7 +71,7 @@ var jss = (function (undefined) {
         styleNode.rel = 'stylesheet';
         head.appendChild(styleNode);
         
-        return jss._nodeToSheet(styleNode);
+        return jss._nodeToSheet(styleNode, sheets);
     };
     
     jss._removeSheet = function (sheet) {
@@ -175,20 +172,26 @@ var jss = (function (undefined) {
     Jss = function () {};
 
     Jss.prototype = {
-        init: function (selector, sheet) {
+        init: function (selector, sheet, referenceDocument) {
             var i;
+            if (referenceDocument == null) {
+                referenceDocument = document;
+            }
+            this.doc    = referenceDocument;
+            this.sheets = this.doc.styleSheets;
+            this.head   = this.doc.head || this.doc.getElementsByTagName('head')[0];
 
             if (sheet == null) {
-                if (!this.sheets) this.sheets = jss._getSheets();
+                if (!this.sheets) this.sheets = jss._getSheets(null, this.sheets);
             } else if (sheet === jss) {
                 if (jss.dfault === undefined)
-                    jss.dfault = jss._addSheet();
+                    jss.dfault = jss._addSheet(this.doc, this.head, this.sheets);
                 this.sheets = [jss.dfault];
             } else if (typeof sheet == 'number') {
                 this.sheets = jss._getSheets(sheet);
             } else if (typeof sheet == 'object') {
                 // Recursive call to init
-                return this.init(selector, jss).add(sheet);
+                return this.init(selector, jss, this.doc).add(sheet);
             }
 
             this.selector = selector;
