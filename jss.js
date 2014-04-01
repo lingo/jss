@@ -1,3 +1,4 @@
+define([], function() {
 /*
  * JSS v0.3 - JavaScript Stylesheets
  * https://github.com/Box9/jss
@@ -272,3 +273,6 @@ var jss = (function (undefined) {
     
     return jss;
 })();
+
+return jss;
+});
